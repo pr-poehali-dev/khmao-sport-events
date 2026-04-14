@@ -1,0 +1,28 @@
+{
+  "tests": [
+    {
+      "name": "Получить все мероприятия",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {"total": 6},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Фильтр по виду спорта",
+      "method": "GET",
+      "path": "/?sport=Биатлон",
+      "expectedStatus": 200,
+      "expectedBody": {"total": 1},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Фильтр по уровню",
+      "method": "GET",
+      "path": "/?level=international",
+      "expectedStatus": 200,
+      "expectedBody": {"total": 1},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
