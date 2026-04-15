@@ -1,0 +1,12 @@
+{
+  "tests": [
+    {
+      "name": "Статистика без сессии запрещена",
+      "method": "GET",
+      "path": "/stats",
+      "expectedStatus": 403,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

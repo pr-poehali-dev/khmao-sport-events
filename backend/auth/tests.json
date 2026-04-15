@@ -1,0 +1,22 @@
+{
+  "tests": [
+    {
+      "name": "Регистрация нового пользователя",
+      "method": "POST",
+      "path": "/register",
+      "body": {"name": "Тест Тестов", "email": "test_auto@sport.ru", "password": "test123", "city": "Ханты-Мансийск"},
+      "expectedStatus": 200,
+      "expectedBody": {"session_id": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Вход с неверным паролем",
+      "method": "POST",
+      "path": "/login",
+      "body": {"email": "noone@x.com", "password": "wrong"},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

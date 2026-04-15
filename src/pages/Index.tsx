@@ -6,8 +6,9 @@ import EventsPage from '@/pages/EventsPage';
 import CalendarPage from '@/pages/CalendarPage';
 import CabinetPage from '@/pages/CabinetPage';
 import ContactsPage from '@/pages/ContactsPage';
+import AdminPage from '@/pages/AdminPage';
 
-type Page = 'home' | 'events' | 'calendar' | 'cabinet' | 'contacts';
+type Page = 'home' | 'events' | 'calendar' | 'cabinet' | 'contacts' | 'admin';
 
 export default function Index() {
   const [activePage, setActivePage] = useState<Page>('home');
@@ -17,24 +18,27 @@ export default function Index() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const isAdmin = activePage === 'admin';
+
   const renderPage = () => {
     switch (activePage) {
-      case 'home':    return <HomePage onNavigate={navigate} />;
-      case 'events':  return <EventsPage />;
+      case 'home':     return <HomePage onNavigate={navigate} />;
+      case 'events':   return <EventsPage />;
       case 'calendar': return <CalendarPage />;
-      case 'cabinet': return <CabinetPage />;
+      case 'cabinet':  return <CabinetPage onNavigate={navigate} />;
       case 'contacts': return <ContactsPage />;
-      default:        return <HomePage onNavigate={navigate} />;
+      case 'admin':    return <AdminPage onNavigate={navigate} />;
+      default:         return <HomePage onNavigate={navigate} />;
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar activePage={activePage} onNavigate={navigate} />
+      {!isAdmin && <Navbar activePage={activePage} onNavigate={navigate} />}
       <main className="flex-1">
         {renderPage()}
       </main>
-      <Footer onNavigate={navigate} />
+      {!isAdmin && <Footer onNavigate={navigate} />}
     </div>
   );
 }

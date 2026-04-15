@@ -8,7 +8,7 @@ from psycopg2.extras import RealDictCursor
 CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Session-Id',
 }
 
 SCHEMA = 't_p2335699_khmao_sport_events'
@@ -73,6 +73,41 @@ def handler(event: dict, context) -> dict:
             'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'},
             'body': json.dumps({'events': result, 'total': len(result)}, ensure_ascii=False),
         }
+
+    # POST /register - записаться на мероприятие
+    if method == 'POST':
+        body = {}
+        if event.get('body'):
+            body = json.loads(event['body'])
+
+        session_id = (event.get('headers') or {}).get('x-session-id')
+        event_id = body.get('event_id')
+
+        if not session_id:
+            return {'statusCode': 401, 'headers': CORS_HEADERS,
+                    'body': json.dumps({'error': 'Необходима авторизация'}, ensure_ascii=False)}
+
+        conn = get_conn()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        cur.execute(
+            f"SELECT u.id FROM {SCHEMA}.sessions s JOIN {SCHEMA}.users u ON u.id = s.user_id "
+            f"WHERE s.id = %s AND s.expires_at > NOW()", (session_id,)
+        )
+        user = cur.fetchone()
+        if not user:
+            cur.close(); conn.close()
+            return {'statusCode': 401, 'headers': CORS_HEADERS,
+                    'body': json.dumps({'error': 'Сессия истекла'}, ensure_ascii=False)}
+
+        cur.execute(
+            f"INSERT INTO {SCHEMA}.event_registrations (user_id, event_id, status) "
+            f"VALUES (%s, %s, 'confirmed') ON CONFLICT (user_id, event_id) DO NOTHING RETURNING id",
+            (user['id'], event_id)
+        )
+        conn.commit(); cur.close(); conn.close()
+        return {'statusCode': 200, 'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'},
+                'body': json.dumps({'ok': True, 'message': 'Регистрация подтверждена!'}, ensure_ascii=False)}
 
     return {
         'statusCode': 405,
