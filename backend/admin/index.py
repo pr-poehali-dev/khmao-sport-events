@@ -46,9 +46,8 @@ def handler(event: dict, context) -> dict:
         return {'statusCode': 200, 'headers': CORS, 'body': ''}
 
     method = event.get('httpMethod', 'GET')
-    path = event.get('path', '/').rstrip('/')
-    action = path.split('/')[-1] if path != '/' else 'stats'
     params = event.get('queryStringParameters') or {}
+    action = params.get('action', 'stats')
     session_id = (event.get('headers') or {}).get('x-session-id') or params.get('session_id')
 
     body = {}

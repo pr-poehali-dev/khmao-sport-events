@@ -97,7 +97,7 @@ function StatsTab() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiFetch(`${API.admin}/stats`)
+    apiFetch(`${API.admin}?action=stats`)
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false); })
       .catch(() => setLoading(false));
@@ -197,7 +197,7 @@ function EventsTab() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true); setError(''); setSuccess('');
-    const res = await apiFetch(`${API.admin}/event`, {
+    const res = await apiFetch(`${API.admin}?action=event`, {
       method: 'POST',
       body: JSON.stringify({
         ...form,
@@ -316,7 +316,7 @@ function PostsTab() {
   const [form, setForm] = useState({ title: '', content: '', excerpt: '', image_url: '', tags: '', published: true });
 
   useEffect(() => {
-    apiFetch(`${API.posts}?all=1`).then(r => r.json()).then(d => {
+    apiFetch(`${API.posts}?all=1&action=list`).then(r => r.json()).then(d => {
       setPosts(d.posts || []);
       setPostsLoading(false);
     }).catch(() => setPostsLoading(false));
@@ -453,7 +453,7 @@ function UsersTab() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiFetch(`${API.admin}/users`).then(r => r.json()).then(d => {
+    apiFetch(`${API.admin}?action=users`).then(r => r.json()).then(d => {
       setUsers(d.users || []);
       setLoading(false);
     }).catch(() => setLoading(false));

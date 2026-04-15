@@ -22,7 +22,7 @@ export function useAuth() {
   const fetchMe = useCallback(async () => {
     const sid = getSessionId();
     if (!sid) { setLoading(false); return; }
-    const res = await apiFetch(`${API.auth}/me`);
+    const res = await apiFetch(`${API.auth}?action=me`);
     if (res.ok) {
       const data = await res.json();
       setUser(data.user);
@@ -38,7 +38,7 @@ export function useAuth() {
   const register = async (params: {
     name: string; email: string; password: string; phone?: string; city?: string; sport?: string;
   }) => {
-    const res = await apiFetch(`${API.auth}/register`, { method: 'POST', body: JSON.stringify(params) });
+    const res = await apiFetch(`${API.auth}?action=register`, { method: 'POST', body: JSON.stringify(params) });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Ошибка регистрации');
     setSession(data.session_id);
@@ -48,7 +48,7 @@ export function useAuth() {
   };
 
   const login = async (email: string, password: string) => {
-    const res = await apiFetch(`${API.auth}/login`, { method: 'POST', body: JSON.stringify({ email, password }) });
+    const res = await apiFetch(`${API.auth}?action=login`, { method: 'POST', body: JSON.stringify({ email, password }) });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Ошибка входа');
     setSession(data.session_id);
@@ -58,7 +58,7 @@ export function useAuth() {
   };
 
   const logout = async () => {
-    await apiFetch(`${API.auth}/logout`, { method: 'POST' });
+    await apiFetch(`${API.auth}?action=logout`, { method: 'POST' });
     clearSession();
     setSessionIdState(null);
     setUser(null);

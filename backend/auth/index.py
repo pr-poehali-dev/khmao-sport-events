@@ -40,15 +40,14 @@ def handler(event: dict, context) -> dict:
         return {'statusCode': 200, 'headers': CORS, 'body': ''}
 
     method = event.get('httpMethod', 'GET')
-    path = event.get('path', '/').rstrip('/')
-    action = path.split('/')[-1] if '/' in path else path.lstrip('/')
+    params = event.get('queryStringParameters') or {}
+    action = params.get('action', 'me')
 
     body = {}
     if event.get('body'):
         body = json.loads(event['body'])
 
-    session_id = (event.get('headers') or {}).get('x-session-id') or \
-                 (event.get('queryStringParameters') or {}).get('session_id')
+    session_id = (event.get('headers') or {}).get('x-session-id') or params.get('session_id')
 
     db = conn()
     cur = db.cursor(cursor_factory=RealDictCursor)
