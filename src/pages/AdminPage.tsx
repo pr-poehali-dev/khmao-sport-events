@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { API, apiFetch } from '@/lib/api';
 
 type AdminTab = 'stats' | 'events' | 'posts' | 'users';

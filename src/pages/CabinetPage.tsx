@@ -1,11 +1,8 @@
 import { useState } from 'react';
 import Icon from '@/components/ui/icon';
-import { useAuth } from '@/hooks/useAuth';
-import { LEVEL_LABELS, LEVEL_COLORS } from '@/data/events';
-import { useEvents } from '@/hooks/useEvents';
-import { API, apiFetch } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
-type Tab = 'profile' | 'registrations' | 'notifications';
+type Tab = 'profile' | 'notifications';
 
 interface CabinetPageProps {
   onNavigate: (page: string) => void;
@@ -17,7 +14,6 @@ export default function CabinetPage({ onNavigate }: CabinetPageProps) {
   const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [formError, setFormError] = useState('');
   const [formLoading, setFormLoading] = useState(false);
-  const { events } = useEvents();
 
   const [regForm, setRegForm] = useState({ name: '', email: '', password: '', phone: '', city: 'Ханты-Мансийск', sport: '' });
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
@@ -173,7 +169,6 @@ export default function CabinetPage({ onNavigate }: CabinetPageProps) {
 
   const tabs: { id: Tab; label: string; icon: string }[] = [
     { id: 'profile', label: 'Профиль', icon: 'User' },
-    { id: 'registrations', label: 'Записаться', icon: 'ClipboardList' },
     { id: 'notifications', label: 'Уведомления', icon: 'Bell' },
   ];
 
@@ -273,13 +268,6 @@ export default function CabinetPage({ onNavigate }: CabinetPageProps) {
           </div>
         )}
 
-        {activeTab === 'registrations' && (
-          <div className="animate-fade-in">
-            <h3 className="font-heading text-xl font-semibold text-hmao-blue mb-4">Запись на мероприятие</h3>
-            <RegisterForEvent events={events} />
-          </div>
-        )}
-
         {activeTab === 'notifications' && (
           <div className="animate-fade-in space-y-3">
             <div className="bg-white rounded-xl border border-border p-4 flex items-start gap-3">
@@ -297,65 +285,6 @@ export default function CabinetPage({ onNavigate }: CabinetPageProps) {
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function RegisterForEvent({ events }: { events: ReturnType<typeof useEvents>['events'] }) {
-  const [registering, setRegistering] = useState<number | null>(null);
-  const [done, setDone] = useState<Set<number>>(new Set());
-  const [errors, setErrors] = useState<Record<number, string>>({});
-
-  const handleRegister = async (eventId: number) => {
-    setRegistering(eventId);
-    setErrors(prev => ({ ...prev, [eventId]: '' }));
-    const res = await apiFetch(API.events, { method: 'POST', body: JSON.stringify({ event_id: eventId }) });
-    const data = await res.json();
-    if (res.ok) {
-      setDone(prev => new Set([...prev, eventId]));
-    } else {
-      setErrors(prev => ({ ...prev, [eventId]: data.error || 'Ошибка' }));
-    }
-    setRegistering(null);
-  };
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {events.map(event => (
-        <div key={event.id} className="bg-white rounded-xl border border-border p-4 flex items-start gap-3 card-hover">
-          <div className="w-12 h-12 bg-hmao-gradient rounded-xl flex items-center justify-center shrink-0">
-            <Icon name="Trophy" size={20} className="text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="font-heading font-semibold text-hmao-blue text-sm leading-snug">{event.title}</div>
-            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground flex-wrap">
-              <span className="flex items-center gap-1">
-                <Icon name="Calendar" size={10} className="text-hmao-teal" />
-                {new Date(event.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
-              </span>
-              <span className={`px-2 py-0.5 rounded-full ${LEVEL_COLORS[event.level]}`}>
-                {LEVEL_LABELS[event.level]}
-              </span>
-            </div>
-            {errors[event.id] && <div className="text-xs text-red-500 mt-1">{errors[event.id]}</div>}
-          </div>
-          <button
-            onClick={() => handleRegister(event.id)}
-            disabled={registering === event.id || done.has(event.id)}
-            className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              done.has(event.id)
-                ? 'bg-emerald-100 text-emerald-700'
-                : 'bg-hmao-blue hover:bg-hmao-teal text-white'
-            } disabled:opacity-60`}
-          >
-            {registering === event.id ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : done.has(event.id) ? (
-              <span className="flex items-center gap-1"><Icon name="Check" size={12} />Записан</span>
-            ) : 'Записаться'}
-          </button>
-        </div>
-      ))}
     </div>
   );
 }
