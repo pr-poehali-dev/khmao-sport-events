@@ -7,7 +7,7 @@ from psycopg2.extras import RealDictCursor
 
 CORS = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, X-Session-Id',
 }
 S = 't_p2335699_khmao_sport_events'
@@ -158,6 +158,42 @@ def handler(event: dict, context) -> dict:
         if not ev:
             return err('Мероприятие не найдено', 404)
         return ok({'event': dict(ev)})
+
+    # GET /events - список мероприятий
+    if method == 'GET' and action == 'events':
+        cur.execute(
+            f"SELECT id, title, sport, date, end_date, location, level, participants, published, created_at "
+            f"FROM {S}.events ORDER BY date DESC"
+        )
+        events = [dict(r) for r in cur.fetchall()]
+        cur.close(); db.close()
+        return ok({'events': events})
+
+    # DELETE /event - удалить мероприятие
+    if method == 'DELETE' and action == 'event':
+        ev_id = body.get('id')
+        if not ev_id:
+            cur.close(); db.close()
+            return err('Укажите id мероприятия')
+        cur.execute(f"DELETE FROM {S}.events WHERE id = %s RETURNING id, title", (ev_id,))
+        ev = cur.fetchone()
+        db.commit(); cur.close(); db.close()
+        if not ev:
+            return err('Мероприятие не найдено', 404)
+        return ok({'deleted': dict(ev)})
+
+    # DELETE /post - удалить новость
+    if method == 'DELETE' and action == 'post':
+        post_id = body.get('id')
+        if not post_id:
+            cur.close(); db.close()
+            return err('Укажите id новости')
+        cur.execute(f"DELETE FROM {S}.posts WHERE id = %s RETURNING id, title", (post_id,))
+        post = cur.fetchone()
+        db.commit(); cur.close(); db.close()
+        if not post:
+            return err('Новость не найдена', 404)
+        return ok({'deleted': dict(post)})
 
     # GET /users
     if method == 'GET' and action == 'users':

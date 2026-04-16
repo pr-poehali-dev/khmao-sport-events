@@ -189,10 +189,24 @@ function EventsTab() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [events, setEvents] = useState<{ id: number; title: string; sport: string; date: string; location: string; level: string }[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [confirmId, setConfirmId] = useState<number | null>(null);
   const [form, setForm] = useState({
     title: '', sport: '', date: '', end_date: '', location: '',
     level: 'regional', participants: '', description: '', image_url: '', tags: '',
   });
+
+  const loadEvents = () => {
+    setEventsLoading(true);
+    apiFetch(`${API.admin}?action=events`).then(r => r.json()).then(d => {
+      setEvents(d.events || []);
+      setEventsLoading(false);
+    }).catch(() => setEventsLoading(false));
+  };
+
+  useEffect(() => { loadEvents(); }, [success]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -218,8 +232,28 @@ function EventsTab() {
     setSaving(false);
   };
 
+  const handleDelete = async (id: number) => {
+    setDeletingId(id);
+    const res = await apiFetch(`${API.admin}?action=event`, {
+      method: 'DELETE',
+      body: JSON.stringify({ id }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setEvents(prev => prev.filter(e => e.id !== id));
+      setSuccess(`Мероприятие удалено`);
+      setTimeout(() => setSuccess(''), 3000);
+    } else {
+      setError(data.error || 'Ошибка удаления');
+    }
+    setDeletingId(null);
+    setConfirmId(null);
+  };
+
   const f = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(prev => ({ ...prev, [key]: e.target.value }));
+
+  const levelLabel: Record<string, string> = { regional: 'Региональный', federal: 'Федеральный', international: 'Международный' };
 
   return (
     <div className="animate-fade-in space-y-4">
@@ -238,11 +272,13 @@ function EventsTab() {
           {success}
         </div>
       )}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">{error}</div>
+      )}
 
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-border p-6 shadow-sm space-y-4 animate-fade-in">
           <h3 className="font-heading text-lg font-semibold text-hmao-blue">Новое мероприятие</h3>
-          {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">{error}</div>}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
@@ -299,8 +335,54 @@ function EventsTab() {
         </form>
       )}
 
-      <div className="bg-white rounded-2xl border border-border p-6 shadow-sm">
-        <p className="text-muted-foreground text-sm">Используйте форму выше для добавления новых мероприятий. Все добавленные события сразу появятся на главной странице и в разделе «Мероприятия».</p>
+      <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
+        {eventsLoading ? (
+          <div className="flex justify-center py-10"><div className="w-6 h-6 border-2 border-hmao-teal border-t-transparent rounded-full animate-spin" /></div>
+        ) : events.length === 0 ? (
+          <div className="text-center py-10 text-muted-foreground text-sm">Мероприятий пока нет</div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-border">
+              <tr>
+                <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Название</th>
+                <th className="text-left px-4 py-3 font-semibold text-muted-foreground hidden md:table-cell">Спорт</th>
+                <th className="text-left px-4 py-3 font-semibold text-muted-foreground hidden md:table-cell">Дата</th>
+                <th className="text-left px-4 py-3 font-semibold text-muted-foreground hidden lg:table-cell">Уровень</th>
+                <th className="px-4 py-3 w-20"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {events.map(ev => (
+                <tr key={ev.id} className="border-b border-border last:border-0 hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 font-medium text-foreground">{ev.title}</td>
+                  <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{ev.sport}</td>
+                  <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{new Date(ev.date).toLocaleDateString('ru-RU')}</td>
+                  <td className="px-4 py-3 hidden lg:table-cell">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">{levelLabel[ev.level] || ev.level}</span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {confirmId === ev.id ? (
+                      <div className="flex items-center gap-1 justify-end">
+                        <button onClick={() => handleDelete(ev.id)} disabled={deletingId === ev.id}
+                          className="text-xs px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50">
+                          {deletingId === ev.id ? '...' : 'Да'}
+                        </button>
+                        <button onClick={() => setConfirmId(null)} className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">
+                          Нет
+                        </button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setConfirmId(ev.id)}
+                        className="p-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                        <Icon name="Trash2" size={15} />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
@@ -313,6 +395,8 @@ function PostsTab() {
   const [error, setError] = useState('');
   const [posts, setPosts] = useState<{ id: number; title: string; excerpt: string; created_at: string; published: boolean }[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [confirmId, setConfirmId] = useState<number | null>(null);
   const [form, setForm] = useState({ title: '', content: '', excerpt: '', image_url: '', tags: '', published: true });
 
   useEffect(() => {
@@ -321,6 +405,24 @@ function PostsTab() {
       setPostsLoading(false);
     }).catch(() => setPostsLoading(false));
   }, [success]);
+
+  const handleDelete = async (id: number) => {
+    setDeletingId(id);
+    const res = await apiFetch(`${API.admin}?action=post`, {
+      method: 'DELETE',
+      body: JSON.stringify({ id }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setPosts(prev => prev.filter(p => p.id !== id));
+      setSuccess('Новость удалена');
+      setTimeout(() => setSuccess(''), 3000);
+    } else {
+      setError(data.error || 'Ошибка удаления');
+    }
+    setDeletingId(null);
+    setConfirmId(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -421,6 +523,7 @@ function PostsTab() {
                 <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Заголовок</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">Дата</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Статус</th>
+                <th className="px-5 py-3 w-20"></th>
               </tr>
             </thead>
             <tbody>
@@ -437,6 +540,24 @@ function PostsTab() {
                     <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${post.published ? 'bg-emerald-100 text-emerald-700' : 'bg-muted text-muted-foreground'}`}>
                       {post.published ? 'Опубликовано' : 'Черновик'}
                     </span>
+                  </td>
+                  <td className="px-5 py-3 text-right">
+                    {confirmId === post.id ? (
+                      <div className="flex items-center gap-1 justify-end">
+                        <button onClick={() => handleDelete(post.id)} disabled={deletingId === post.id}
+                          className="text-xs px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50">
+                          {deletingId === post.id ? '...' : 'Да'}
+                        </button>
+                        <button onClick={() => setConfirmId(null)} className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">
+                          Нет
+                        </button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setConfirmId(post.id)}
+                        className="p-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                        <Icon name="Trash2" size={15} />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
