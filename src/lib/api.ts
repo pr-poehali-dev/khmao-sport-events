@@ -23,6 +23,10 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string> || {}),
   };
-  if (sid) headers['X-Session-Id'] = sid;
+  if (sid) {
+    headers['X-Session-Id'] = sid;
+    const sep = url.includes('?') ? '&' : '?';
+    if (!url.includes('session_id=')) url = `${url}${sep}session_id=${sid}`;
+  }
   return fetch(url, { ...options, headers });
 }

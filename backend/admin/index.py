@@ -48,7 +48,8 @@ def handler(event: dict, context) -> dict:
     method = event.get('httpMethod', 'GET')
     params = event.get('queryStringParameters') or {}
     action = params.get('action', 'stats')
-    session_id = (event.get('headers') or {}).get('x-session-id') or params.get('session_id')
+    headers = event.get('headers') or {}
+    session_id = headers.get('x-session-id') or params.get('session_id')
 
     body = {}
     if event.get('body'):

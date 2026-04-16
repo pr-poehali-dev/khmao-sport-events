@@ -36,7 +36,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
       setUser(data.user);
     } else {
-      clearSession();
       setUser(null);
     }
     setLoading(false);
