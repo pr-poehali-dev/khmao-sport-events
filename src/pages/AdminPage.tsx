@@ -104,7 +104,7 @@ function StatsTab() {
   }, []);
 
   if (loading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-hmao-teal border-t-transparent rounded-full animate-spin" /></div>;
-  if (!data) return null;
+  if (!data || !data.stats) return null;
 
   const cards = [
     { label: 'Пользователей', value: data.stats.users_total, sub: `+${data.stats.users_week} за неделю`, icon: 'Users', color: 'text-blue-600 bg-blue-50' },
