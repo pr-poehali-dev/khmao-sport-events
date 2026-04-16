@@ -61,15 +61,16 @@ def handler(event: dict, context) -> dict:
         offset = int(params.get('offset', 0))
         published_only = params.get('all') != '1'
 
-        where = f"WHERE p.published = TRUE" if published_only else ""
+        published_filter = "WHERE p.published = TRUE" if published_only else ""
+        count_filter = "WHERE published = TRUE" if published_only else ""
         cur.execute(
             f"SELECT p.*, u.name as author_name FROM {S}.posts p "
             f"LEFT JOIN {S}.users u ON u.id = p.author_id "
-            f"{where} ORDER BY p.created_at DESC LIMIT %s OFFSET %s",
+            f"{published_filter} ORDER BY p.created_at DESC LIMIT %s OFFSET %s",
             (limit, offset)
         )
         rows = [dict(r) for r in cur.fetchall()]
-        cur.execute(f"SELECT COUNT(*) as total FROM {S}.posts {where}")
+        cur.execute(f"SELECT COUNT(*) as total FROM {S}.posts {count_filter}")
         total = cur.fetchone()['total']
         cur.close(); db.close()
         return ok({'posts': rows, 'total': total})

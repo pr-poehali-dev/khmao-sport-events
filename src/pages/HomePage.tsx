@@ -34,6 +34,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
   useEffect(() => {
     fetch(API.posts)
@@ -41,6 +42,15 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       .then(d => { setPosts((d.posts || []).slice(0, 6)); setPostsLoading(false); })
       .catch(() => setPostsLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (selectedPost) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [selectedPost]);
 
   return (
     <div>
@@ -227,7 +237,8 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               {posts.map((post, i) => (
                 <div
                   key={post.id}
-                  className="bg-white rounded-2xl overflow-hidden shadow-sm border border-border card-hover animate-fade-in"
+                  onClick={() => setSelectedPost(post)}
+                  className="bg-white rounded-2xl overflow-hidden shadow-sm border border-border card-hover animate-fade-in cursor-pointer"
                   style={{ animationDelay: `${i * 0.1}s` }}
                 >
                   {post.image_url ? (
@@ -254,6 +265,9 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                         ))}
                       </div>
                     )}
+                    <div className="mt-3 flex items-center gap-1 text-hmao-teal text-xs font-medium">
+                      Читать далее <Icon name="ArrowRight" size={12} />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -261,6 +275,55 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           )}
         </div>
       </section>
+
+      {/* Модальное окно новости */}
+      {selectedPost && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+          onClick={() => setSelectedPost(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            {selectedPost.image_url ? (
+              <div className="h-56 overflow-hidden rounded-t-2xl">
+                <img src={selectedPost.image_url} alt={selectedPost.title} className="w-full h-full object-cover" />
+              </div>
+            ) : (
+              <div className="h-32 bg-hmao-gradient rounded-t-2xl flex items-center justify-center">
+                <Icon name="Newspaper" size={40} className="text-white/30" />
+              </div>
+            )}
+            <div className="p-6 md:p-8">
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div>
+                  <div className="text-xs text-muted-foreground mb-1">
+                    {new Date(selectedPost.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </div>
+                  <h2 className="font-heading text-xl md:text-2xl font-bold text-hmao-blue leading-snug">{selectedPost.title}</h2>
+                </div>
+                <button
+                  onClick={() => setSelectedPost(null)}
+                  className="flex-shrink-0 p-2 rounded-xl hover:bg-gray-100 transition-colors"
+                >
+                  <Icon name="X" size={20} className="text-muted-foreground" />
+                </button>
+              </div>
+              {selectedPost.tags && selectedPost.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-5">
+                  {selectedPost.tags.map(tag => (
+                    <span key={tag} className="text-xs text-hmao-teal bg-hmao-light px-2.5 py-1 rounded-full">#{tag}</span>
+                  ))}
+                </div>
+              )}
+              <div className="text-sm md:text-base text-foreground leading-relaxed whitespace-pre-line">
+                {selectedPost.content}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* CTA Banner — только для незарегистрированных */}
       {!user && <section className="py-6">
