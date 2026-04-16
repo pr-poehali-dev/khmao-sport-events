@@ -37,6 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(data.user);
     } else {
       clearSession();
+      setUser(null);
     }
     setLoading(false);
   }, []);
