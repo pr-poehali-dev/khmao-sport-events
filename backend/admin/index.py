@@ -2,8 +2,15 @@
 
 import json
 import os
+import datetime
 import psycopg2
 from psycopg2.extras import RealDictCursor
+
+
+def json_serial(obj):
+    if isinstance(obj, (datetime.date, datetime.datetime)):
+        return obj.isoformat()
+    raise TypeError(f'Type {type(obj)} not serializable')
 
 CORS = {
     'Access-Control-Allow-Origin': '*',
@@ -19,7 +26,7 @@ def conn():
 
 def ok(data: dict) -> dict:
     return {'statusCode': 200, 'headers': {**CORS, 'Content-Type': 'application/json'},
-            'body': json.dumps(data, ensure_ascii=False, default=str)}
+            'body': json.dumps(data, ensure_ascii=False, default=json_serial)}
 
 
 def err(msg: str, code: int = 400) -> dict:
@@ -162,7 +169,7 @@ def handler(event: dict, context) -> dict:
     # GET /events - список мероприятий
     if method == 'GET' and action == 'events':
         cur.execute(
-            f"SELECT id, title, sport, date, end_date, location, level, participants, published, created_at "
+            f"SELECT id, title, sport, date, end_date, location, level, participants, created_at "
             f"FROM {S}.events ORDER BY date DESC"
         )
         events = [dict(r) for r in cur.fetchall()]

@@ -3,6 +3,7 @@ import Icon from '@/components/ui/icon';
 import { useEvents } from '@/hooks/useEvents';
 import { LEVEL_LABELS, LEVEL_COLORS } from '@/data/events';
 import { API } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Post {
   id: number;
@@ -27,6 +28,7 @@ const stats = [
 ];
 
 export default function HomePage({ onNavigate }: HomePageProps) {
+  const { user } = useAuth();
   const { events, loading } = useEvents();
   const upcoming = events.slice(0, 3);
 
@@ -34,7 +36,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
   const [postsLoading, setPostsLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${API.posts}?action=list`)
+    fetch(API.posts)
       .then(r => r.json())
       .then(d => { setPosts((d.posts || []).slice(0, 6)); setPostsLoading(false); })
       .catch(() => setPostsLoading(false));
@@ -260,8 +262,8 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </div>
       </section>
 
-      {/* CTA Banner */}
-      <section className="py-6">
+      {/* CTA Banner — только для незарегистрированных */}
+      {!user && <section className="py-6">
         <div className="container mx-auto px-4">
           <div className="bg-hmao-gradient rounded-2xl p-10 md:p-14 text-center relative overflow-hidden">
             <div
@@ -289,7 +291,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             </div>
           </div>
         </div>
-      </section>
+      </section>}
     </div>
   );
 }
