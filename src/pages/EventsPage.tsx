@@ -156,9 +156,7 @@ export default function EventsPage() {
                       ))}
                     </div>
                   )}
-                  <button className="mt-4 w-full bg-hmao-blue hover:bg-hmao-teal text-white py-2.5 rounded-xl text-sm font-medium transition-colors">
-                    Зарегистрироваться
-                  </button>
+
                 </div>
               </div>
             ))}
